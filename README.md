@@ -74,14 +74,7 @@ npm run db:init    # creates tables + mock data
 npm run dev        # starts on localhost:3000
 ```
 
-## Deploy on Vercel
 
-1. Push this repo to GitHub
-2. Import in Vercel
-3. Add `DATABASE_URL` as environment variable
-4. Deploy
-
-No config files to touch. No build commands. It just works.
 
 ## Why This Approach
 
@@ -89,6 +82,3 @@ No config files to touch. No build commands. It just works.
 - **Connection pool is lazy-initialized** — doesn't connect until the first request hits. Survives Vercel's warm/cold cycles without exhausting Postgres connections.
 - **The parser is regex + rules** — not an LLM call. Runs in microseconds. No API bills. But still handles Hinglish naturally.
 
-## A Note on the Architecture
-
-This isn't over-engineered. It's three routes, one pool file, and a parser. If this scales, you'd add a message queue for retries, a proper SMS gateway, and real WhatsApp Business API integration. But for the assignment — and honestly, for an MVP — this covers the ground without pretending to be Netflix.
