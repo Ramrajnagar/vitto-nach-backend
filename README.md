@@ -1,12 +1,12 @@
 # Vitto e-NACH Backend
 
-A conversational pre-screening and automated repayment ledger for micro-lending — built for the Vitto Money assignment.
+A conversational pre-screening and automated repayment ledger for micro-lending built for the Vitto Money assignment.
 
 ## The Problem
 
 Most small business owners in India (kirana stores, tailors, mobile repair shops) don't have a credit score. They need small loans fast. But the paperwork, verification, and follow-ups kill the deal before it starts.
 
-On the repayment side — chasing EMI manually is expensive. NACH mandates exist but integrating them with a clean ledger and retry logic is where most teams drop the ball.
+On the repayment side  chasing EMI manually is expensive. NACH mandates exist but integrating them with a clean ledger and retry logic is where most teams drop the ball.
 
 ## What This Does
 
@@ -18,7 +18,7 @@ A user texts something like:
 
 > "Hi, my name is Rajesh, I run a grocery store and make 50000 a month. I need a loan."
 
-The API parses this conversationally (Hinglish/English), extracts name, business type, and income — and responds back with:
+The API parses this conversationally (Hinglish/English), extracts name, business type, and income and responds back with:
 
 - Confirmed registration
 - Loan range (up to 3x monthly income)
