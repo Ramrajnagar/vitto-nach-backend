@@ -174,6 +174,19 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Vitto e-NACH Backend',
+    version: '1.0.0',
+    endpoints: {
+      'POST /api/whatsapp-webhook': 'Register user via text message',
+      'POST /api/repayment-webhook': 'Process e-NACH callback (SUCCESS/FAILED)',
+      'GET  /api/dashboard': 'View all users + repayment status',
+      'GET  /api/health': 'Health check',
+    },
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
