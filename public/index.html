@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitto e-NACH Backend</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #222; padding: 24px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 24px; margin-bottom: 4px; }
+  .subtitle { color: #666; margin-bottom: 24px; font-size: 14px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 16px; margin-bottom: 12px; color: #333; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; }
+  th { font-weight: 600; color: #555; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge.active { background: #e8f5e9; color: #2e7d32; }
+  .badge.closed { background: #e3f2fd; color: #1565c0; }
+  .badge.pending { background: #fff3e0; color: #e65100; }
+  .badge.success { background: #e8f5e9; color: #2e7d32; }
+  .badge.failed { background: #fce4ec; color: #c62828; }
+  .badge.defaulted { background: #fce4ec; color: #b71c1c; }
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-row label { font-size: 12px; font-weight: 600; color: #555; display: block; margin-bottom: 4px; }
+  .form-row input, .form-row textarea { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; flex: 1; min-width: 200px; }
+  .form-row textarea { min-height: 60px; font-family: inherit; }
+  .form-row input:focus, .form-row textarea:focus { outline: none; border-color: #2563eb; }
+  button { padding: 8px 20px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  button:hover { background: #1d4ed8; }
+  button.secondary { background: #64748b; }
+  button.secondary:hover { background: #475569; }
+  .result { margin-top: 12px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; white-space: pre-wrap; max-height: 300px; overflow: auto; }
+  .error { color: #dc2626; }
+  .loading { opacity: 0.6; pointer-events: none; }
+  .user-row { cursor: pointer; }
+  .user-row:hover { background: #f8fafc; }
+  .repayments { margin-top: 8px; margin-left: 20px; font-size: 12px; }
+  .repayments summary { cursor: pointer; color: #2563eb; font-weight: 500; }
+  .repayments table { font-size: 12px; margin-top: 6px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: #fff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+  .user-count { font-size: 28px; font-weight: 700; color: #2563eb; }
+  .stat-label { font-size: 12px; color: #666; margin-top: 2px; }
+  .stats { display: flex; gap: 32px; margin-bottom: 20px; }
+  .refresh { font-size: 12px; color: #2563eb; cursor: pointer; text-decoration: underline; margin-left: 8px; }
+  .inline-code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1>Vitto e-NACH</h1>
+      <div class="subtitle">Conversational pre-screening &amp; automated repayment ledger</div>
+    </div>
+    <div style="text-align:right; font-size:12px; color:#888;">
+      <div id="liveStatus">● checking...</div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 style="margin:0;">Users &amp; Loans</h2>
+      <button class="secondary" onclick="loadDashboard()" style="font-size:12px; padding:4px 12px;">↻ Refresh</button>
+    </div>
+    <div id="dashboard-content">
+      <p style="color:#888; font-size:13px;">Loading...</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Test: WhatsApp Webhook</h2>
+      <div class="form-row">
+        <div style="flex:1;">
+          <label>Message</label>
+          <textarea id="wa-message" placeholder="Hi, my name is Rajesh, I run a grocery store and make 50000 a month.">Hi, my name is Rajesh, I run a grocery store and make 50000 a month.</textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div style="flex:1;">
+          <label>Phone (optional)</label>
+          <input id="wa-phone" placeholder="9876543210">
+        </div>
+      </div>
+      <button onclick="testWhatsApp()">Send</button>
+      <div id="wa-result" class="result">Response will appear here...</div>
+    </div>
+
+    <div class="card">
+      <h2>Test: Repayment Webhook</h2>
+      <div class="form-row">
+        <div style="flex:1;">
+          <label>Repayment ID</label>
+          <input id="rp-id" type="number" value="1" min="1">
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="rp-status">
+            <option value="SUCCESS">SUCCESS</option>
+            <option value="FAILED" selected>FAILED</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="testRepayment()">Send</button>
+      <div id="rp-result" class="result">Response will appear here...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  return res.json();
+}
+
+async function loadDashboard() {
+  const el = document.getElementById('dashboard-content');
+  el.innerHTML = '<p style="color:#888;">Loading...</p>';
+  try {
+    const data = await api('/api/dashboard');
+    const users = data.users || [];
+    renderDashboard(users);
+    renderStats(users);
+  } catch (e) {
+    el.innerHTML = `<p class="error">Failed to load: ${e.message}</p>`;
+  }
+}
+
+function renderStats(users) {
+  const el = document.getElementById('stats');
+  const totalLoans = users.reduce((s, u) => s + (u.loan_accounts || []).length, 0);
+  const activeLoans = users.reduce((s, u) => s + (u.loan_accounts || []).filter(l => l.status === 'ACTIVE').length, 0);
+  const pendingRepayments = users.reduce((s, u) =>
+    s + (u.loan_accounts || []).reduce((ss, l) =>
+      ss + (l.repayments || []).filter(r => r.status === 'PENDING' || r.status === 'FAILED').length, 0
+    ), 0);
+  el.innerHTML = `
+    <div><div class="user-count">${users.length}</div><div class="stat-label">Users</div></div>
+    <div><div class="user-count">${activeLoans}</div><div class="stat-label">Active Loans</div></div>
+    <div><div class="user-count">${pendingRepayments}</div><div class="stat-label">Pending Repayments</div></div>
+  `;
+}
+
+function renderDashboard(users) {
+  const el = document.getElementById('dashboard-content');
+  if (users.length === 0) {
+    el.innerHTML = '<p style="color:#888;">No users found.</p>';
+    return;
+  }
+  let html = `<table>
+    <thead><tr>
+      <th>Name</th><th>Business</th><th>Income</th><th>Loan Amount</th><th>Status</th><th></th>
+    </tr></thead><tbody>`;
+  for (const u of users) {
+    const loans = u.loan_accounts || [];
+    if (loans.length === 0) {
+      html += `<tr><td>${u.name}</td><td>${u.business_type}</td><td>₹${Number(u.income).toLocaleString('en-IN')}</td>
+        <td colspan="3" style="color:#999;">No loan account</td></tr>`;
+    }
+    for (const l of loans) {
+      const repayments = l.repayments || [];
+      const totalDue = repayments.reduce((s, r) => s + (r.status === 'PENDING' ? Number(r.amount) + Number(r.late_fee) : 0), 0);
+      html += `<tr>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.business_type}</td>
+        <td>₹${Number(u.income).toLocaleString('en-IN')}</td>
+        <td>₹${Number(l.loan_amount).toLocaleString('en-IN')}</td>
+        <td><span class="badge ${l.status.toLowerCase()}">${l.status}</span></td>
+        <td>
+          <details class="repayments">
+            <summary>${repayments.length} repayment(s) · ₹${totalDue.toLocaleString('en-IN')} due</summary>
+            <table><thead><tr><th>Due</th><th>Amount</th><th>Status</th><th>Retries</th><th>Late Fee</th></tr></thead><tbody>
+            ${repayments.map(r => `
+              <tr>
+                <td>${r.due_date}</td>
+                <td>₹${Number(r.amount).toLocaleString('en-IN')}</td>
+                <td><span class="badge ${r.status.toLowerCase()}">${r.status}</span></td>
+                <td>${r.retry_count}</td>
+                <td>${Number(r.late_fee) > 0 ? '₹' + Number(r.late_fee).toLocaleString('en-IN') : '—'}</td>
+              </tr>
+            `).join('')}
+            </tbody></table>
+          </details>
+        </td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+async function testWhatsApp() {
+  const btn = document.querySelector('#wa-result').previousElementSibling;
+  const el = document.getElementById('wa-result');
+  btn.classList.add('loading');
+  el.textContent = 'Sending...';
+  try {
+    const data = await api('/api/whatsapp-webhook', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: document.getElementById('wa-message').value,
+        phone: document.getElementById('wa-phone').value || undefined,
+      }),
+    });
+    el.innerHTML = `<strong>Status:</strong> ${data.status}\n\n${data.reply || JSON.stringify(data, null, 2)}`;
+  } catch (e) {
+    el.innerHTML = `<span class="error">${e.message}</span>`;
+  } finally {
+    btn.classList.remove('loading');
+    loadDashboard();
+  }
+}
+
+async function testRepayment() {
+  const btn = document.querySelector('#rp-result').previousElementSibling;
+  const el = document.getElementById('rp-result');
+  btn.classList.add('loading');
+  el.textContent = 'Sending...';
+  try {
+    const data = await api('/api/repayment-webhook', {
+      method: 'POST',
+      body: JSON.stringify({
+        repayment_id: parseInt(document.getElementById('rp-id').value),
+        status: document.getElementById('rp-status').value,
+      }),
+    });
+    el.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    el.innerHTML = `<span class="error">${e.message}</span>`;
+  } finally {
+    btn.classList.remove('loading');
+    loadDashboard();
+  }
+}
+
+async function checkHealth() {
+  try {
+    const data = await api('/api/health');
+    document.getElementById('liveStatus').innerHTML = '● live';
+    document.getElementById('liveStatus').style.color = '#16a34a';
+  } catch {
+    document.getElementById('liveStatus').innerHTML = '● offline';
+    document.getElementById('liveStatus').style.color = '#dc2626';
+  }
+}
+
+checkHealth();
+loadDashboard();
+</script>
+</body>
+</html>

@@ -1,10 +1,18 @@
 import 'dotenv/config';
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { query } from '../db/pool.js';
 import { parseMessage } from '../utils/parser.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
 
 app.post('/api/whatsapp-webhook', async (req, res) => {
   try {
@@ -172,19 +180,6 @@ app.get('/api/dashboard', async (req, res) => {
     console.error('[DASHBOARD]', err);
     res.status(500).json({ error: 'Internal server error' });
   }
-});
-
-app.get('/', (req, res) => {
-  res.json({
-    name: 'Vitto e-NACH Backend',
-    version: '1.0.0',
-    endpoints: {
-      'POST /api/whatsapp-webhook': 'Register user via text message',
-      'POST /api/repayment-webhook': 'Process e-NACH callback (SUCCESS/FAILED)',
-      'GET  /api/dashboard': 'View all users + repayment status',
-      'GET  /api/health': 'Health check',
-    },
-  });
 });
 
 app.get('/api/health', (req, res) => {
