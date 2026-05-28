@@ -1,0 +1,16 @@
+{
+  "name": "vitto-nach-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch api/index.js",
+    "start": "node api/index.js",
+    "db:init": "node -e \"import { readFileSync } from 'fs'; import pg from 'pg'; const { Pool } = pg; const p = new Pool({ connectionString: process.env.DATABASE_URL }); p.query(readFileSync('./init.sql', 'utf8')).then(() => { console.log('DB initialized'); process.exit(0); }).catch(e => { console.error(e); process.exit(1); })\""
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "pg": "^8.13.0",
+    "dotenv": "^16.4.5"
+  }
+}
